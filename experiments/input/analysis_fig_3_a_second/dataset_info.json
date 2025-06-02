@@ -1,0 +1,305 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "idx": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "truncated_input": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "baseline_completion": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "orig_sample_length": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "prompt_length": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "real_completion_length": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "no_bl_gen_time": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "w_bl_gen_time": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "no_bl_output": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "w_bl_output": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "no_bl_num_tokens_generated": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "w_bl_num_tokens_generated": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "no_bl_sec_per_tok": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "no_bl_tok_per_sec": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "w_bl_sec_per_tok": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "w_bl_tok_per_sec": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "baseline_loss": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "baseline_ppl": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "no_bl_loss": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "no_bl_ppl": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "w_bl_loss": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "w_bl_ppl": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "model_name": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "dataset_name": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "dataset_config_name": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "shuffle_dataset": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "shuffle_seed": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "shuffle_buffer_size": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "max_new_tokens": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "min_prompt_tokens": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "min_sample_tokens": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "limit_indices": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "input_truncation_strategy": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "input_filtering_strategy": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "output_filtering_strategy": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "initial_seed": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "dynamic_seed": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "bl_proportion": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "bl_logit_bias": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "bl_type": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "num_beams": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "no_repeat_ngram_size": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "early_stopping": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "oracle_model_name": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "no_wandb": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "wandb_project": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "wandb_entity": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "run_name": {
+      "dtype": "null",
+      "_type": "Value"
+    },
+    "output_dir": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "load_prev_generations": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "store_bl_ids": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "store_spike_ents": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "use_sampling": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "sampling_temp": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "generate_only": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "all_gas_no_eos": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "gen_table_already_existed": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "baseline_num_toks_gend_eq_0": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "baseline_whitelist_fraction": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "baseline_blacklist_fraction": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "baseline_hit_list": {
+      "feature": {
+        "dtype": "bool",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "no_bl_num_toks_gend_eq_0": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "no_bl_whitelist_fraction": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "no_bl_blacklist_fraction": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "no_bl_hit_list": {
+      "feature": {
+        "dtype": "bool",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "w_bl_num_toks_gend_eq_0": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "w_bl_whitelist_fraction": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "w_bl_blacklist_fraction": {
+      "dtype": "float64",
+      "_type": "Value"
+    },
+    "w_bl_hit_list": {
+      "feature": {
+        "dtype": "bool",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "SLURM_JOB_ID": {
+      "dtype": "null",
+      "_type": "Value"
+    },
+    "SLURM_ARRAY_JOB_ID": {
+      "dtype": "null",
+      "_type": "Value"
+    },
+    "SLURM_ARRAY_TASK_ID": {
+      "dtype": "null",
+      "_type": "Value"
+    }
+  },
+  "homepage": "",
+  "license": ""
+}

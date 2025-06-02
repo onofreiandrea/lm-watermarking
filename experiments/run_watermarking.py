@@ -19,6 +19,8 @@ from tokenizers import Tokenizer
 import wandb
 import matplotlib.pyplot as plt
 
+import torch_directml
+
 # cache path before HF imports just for kicks
 # bc I don't really know when this is pulled by the library
 # TODO change to passing as an arg to the model load fn
@@ -100,7 +102,7 @@ def main(args):
 
     # defaults to device 0
     # will need to use 'parallelize' for multi-gpu sharding
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch_directml.device()
     model = model.to(device)
     model.eval()
 
@@ -116,9 +118,9 @@ def main(args):
                                 subsets=subsets,
                                 streaming=True,
                                 split=None,
-                                ignore_verifications=True)["train"]
+                                ignore_verifications=True, trust_remote_code=True)["train"]
     else:
-        dataset = load_dataset(dataset_name, dataset_config_name, split="train", streaming=True)
+        dataset = load_dataset(dataset_name, dataset_config_name, split="train", streaming=True, trust_remote_code=True)
     
     # log an example
     ds_iterator = iter(dataset)
@@ -354,9 +356,9 @@ def main(args):
                       f"current generation overhead ratio: {round(len(processed_examples)/(i+1), 3)}",
                       f"completed {round(i/args.limit_indices, 2)} of total")
     
-    print(f"#"*80,
-          f"\nGeneration output length check overhead was num rows processed={len(processed_examples)}",
-          f"for {args.limit_indices} samples. Ratio: {round(len(processed_examples)/args.limit_indices, 3)}")
+    # print(f"#"*80,
+    #       f"\nGeneration output length check overhead was num rows processed={len(processed_examples)}",
+    #       f"for {args.limit_indices} samples. Ratio: {round(len(processed_examples)/args.limit_indices, 3)}")
     
     ###########################################################################
     # Generation jsonl dumping/loading
@@ -399,10 +401,12 @@ def main(args):
         assert not prev_gen_table_meta["gen_table_already_existed"], f"failed for safety bc 'gen_table_already_existed' was true in the metadata file in this dir, indicating a possible issue"
         assert not os.path.exists(safe_gen_table_path), f"failed for safety bc there is a secondary 'safe' marked file in this dir indicating a possible issue"
         
-        params_to_ignore = ["load_prev_generations","SLURM_JOB_ID","SLURM_ARRAY_JOB_ID","SLURM_ARRAY_TASK_ID"]
+        params_to_ignore = ["load_prev_generations", "generate_only"]
         for k in params_to_ignore:
             del curr_gen_table_meta[k]
             del prev_gen_table_meta[k]
+        print(curr_gen_table_meta)
+        print(prev_gen_table_meta)
         assert curr_gen_table_meta == prev_gen_table_meta, "failed safety check that current script params equal the params for the prev generations being loaded"
 
         # gen_table_meta = argparse.Namespace(**args.__dict__)
@@ -435,7 +439,7 @@ def main(args):
     print(f"Loading oracle model: {oracle_model_name}")
     
     oracle_tokenizer = AutoTokenizer.from_pretrained(oracle_model_name)
-    oracle_model = AutoModelForCausalLM.from_pretrained(oracle_model_name).to(device)
+    oracle_model = AutoModelForCausalLM.from_pretrained(oracle_model_name).to(torch.device("cpu"))
     oracle_model.eval()
 
     # construct fluency/ppl partial
@@ -471,7 +475,7 @@ def main(args):
     write_jsonlines(gen_table_w_metrics_lst, gen_table_w_metrics_path)
 
     # finish the wandb run
-    run.finish()
+    if not args.no_wandb: run.finish()
 
     return 
 
@@ -482,7 +486,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_name",
         type=str,
-        default="facebook/opt-2.7b",
+        default="facebook/opt-1.3b",
         help="Main model, path to pretrained model or model identifier from huggingface.co/models.",
     )
     parser.add_argument(
@@ -622,13 +626,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--oracle_model_name",
         type=str,
-        default="EleutherAI/gpt-j-6B",
+        default="facebook/opt-2.7b",
         help="PPL scoring, or oracle model, path to pretrained model or model identifier from huggingface.co/models.",
     )
     parser.add_argument(
         "--no_wandb",
         type=str2bool,
-        default=False,
+        default=True,
         help="Whether to log to wandb.",
     )
     parser.add_argument(
@@ -671,13 +675,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--store_spike_ents",
         type=str2bool,
-        default=False,
+        default=True,
         help=("Whether to store the spike entropies while generating with bl processor. "),
     )
     parser.add_argument(
         "--use_sampling",
         type=str2bool,
-        default=False,
+        default=True,
         help=("Whether to perform sampling during generation. (non-greedy decoding)"),
     )
     parser.add_argument(

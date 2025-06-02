@@ -189,7 +189,7 @@ def load_all_datasets(run_names: list[str]=None,
         return ds
 
 
-output_dir = "/cmlscratch/jkirchen/spiking-root/lm-blacklisting/output_large_sweep"
+output_dir = "C:\\Users\\viene\\lm-watermarking\\fig_2_a"
 # output_dir = "/cmlscratch/jkirchen/spiking-root/lm-blacklisting/output_large_sweep_downsize"
 
 # output_dir = "/cmlscratch/jkirchen/spiking-root/lm-blacklisting/output_large_sweep_downsize"
@@ -197,7 +197,7 @@ output_dir = "/cmlscratch/jkirchen/spiking-root/lm-blacklisting/output_large_swe
 # output_dir = "/cmlscratch/jkirchen/spiking-root/lm-blacklisting/output_greedy_gamma_0-25"
 
 run_names = list(filter(lambda name: os.path.exists(f"{output_dir}/{name}/gen_table_w_metrics.jsonl"), sorted(os.listdir(output_dir))))
-run_names = list(filter(lambda name: "realnewslike" in name, run_names))
+# run_names = list(filter(lambda name: "realnewslike" in name, run_names))
 # run_names = list(filter(lambda name: "pile" in name, run_names))
 # run_names = list(filter(lambda name: "c4_en" in name, run_names))
 
@@ -230,7 +230,7 @@ print(f"all runs ready? {all(runs_ready)}\n{runs_ready}")
 # save_name = "analysis_ds_1-23_pile_1-3"
 # save_name = "analysis_ds_1-23_en_1-3"
 
-save_name = "analysis_ds_1-30_realnews_2-7"
+save_name = "analysis_fig_2_a"
 
 save_dir = f"input/{save_name}"
 

@@ -8,6 +8,7 @@ import random
 import math
 import torch
 import numpy as np
+import torch_directml
 
 from torch import Tensor
 from tokenizers import Tokenizer
@@ -272,7 +273,7 @@ def score_sequence(inputs: Tensor = None,
     if initial_seed is not None:
         random.seed(initial_seed)
     
-    device = (torch.device("cuda") if use_cuda else torch.device("cpu"))
+    device = torch_directml.device()
     g_cuda = torch.Generator(device=device)
     large_prime = 15485863
 
