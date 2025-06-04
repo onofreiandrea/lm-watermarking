@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 # TODO change to passing as an arg to the model load fn
 USER = "jkirchen"
 # Huggingface cache
-HF_HOME=f"/cmlscratch/{USER}/.cache/huggingface"
+HF_HOME=f"/Users/andreaonofrei/.cache/huggingface"
 # HF_HOME=f"/scratch0/{USER}/.cache/huggingface"
 # HF_HOME=f"/scratch1/{USER}/.cache/huggingface"
 os.environ["HF_HOME"] = HF_HOME
@@ -110,14 +110,21 @@ def main(args):
     dataset_name, dataset_config_name = args.dataset_name, args.dataset_config_name
 
     if dataset_name == "cml_pile":
-        subsets = [dataset_config_name]
-        dataset = load_dataset("input/cml_pile.py",
-                                subsets=subsets,
-                                streaming=True,
-                                split=None,
-                                ignore_verifications=True, trust_remote_code=True)["train"]
+        dataset = load_dataset(dataset_name, dataset_config_name, split="train", streaming=False, trust_remote_code=True)
     else:
-        dataset = load_dataset(dataset_name, dataset_config_name, split="train", streaming=True, trust_remote_code=True)
+        # Use allenai/c4 instead of c4 and disable streaming
+        if dataset_name == "c4":
+            dataset_name = "allenai/c4"
+            dataset = load_dataset(dataset_name, 
+                                 dataset_config_name, 
+                                 split="train", 
+                                 streaming=False,
+                                 trust_remote_code=False)
+        else:
+            dataset = load_dataset(dataset_name, 
+                                 dataset_config_name, 
+                                 split="train", 
+                                 streaming=False)
     
     # log an example
     ds_iterator = iter(dataset)
