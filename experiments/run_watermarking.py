@@ -19,8 +19,6 @@ from tokenizers import Tokenizer
 import wandb
 import matplotlib.pyplot as plt
 
-import torch_directml
-
 # cache path before HF imports just for kicks
 # bc I don't really know when this is pulled by the library
 # TODO change to passing as an arg to the model load fn
@@ -100,9 +98,8 @@ def main(args):
 
     tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
 
-    # defaults to device 0
-    # will need to use 'parallelize' for multi-gpu sharding
-    device = torch_directml.device()
+    # Use CUDA if available
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     model = model.to(device)
     model.eval()
 
@@ -522,7 +519,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max_new_tokens",
         type=int,
-        default=100,
+        default=200,
         help="The number of tokens to generate using the model, and the num tokens removed from real text sample",
     )
     parser.add_argument(
@@ -540,7 +537,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--limit_indices",
         type=int,
-        default=5, # 500
+        default=500, # 500
         help="The number of examples (first N) to process from the dataset.",
     )
     parser.add_argument(
@@ -553,14 +550,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--input_filtering_strategy",
         type=str,
-        default="completion_length",
+        default="prompt_and_completion_length",
         choices=["completion_length", "prompt_length", "prompt_and_completion_length"],
         help="The strategy to use when tokenizing and truncating raw inputs to make prompts.",
     )
     parser.add_argument(
         "--output_filtering_strategy",
         type=str,
-        default="no_filter",
+        default="max_new_tokens",
         choices=["no_filter", "max_new_tokens"],
         help=(f"The strategy to use when filtering/skipping rows if the model didn't ",
               f"generate enough tokens to facilitate analysis.")

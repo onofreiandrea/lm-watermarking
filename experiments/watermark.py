@@ -7,8 +7,17 @@ import time
 import random
 import math
 import torch
+import torch.nn as nn
 import numpy as np
-import torch_directml
+import torch.nn.functional as F
+import sentencepiece as spm
+import metrics.detect_retrieval_utils.pairing as pairing
+import metrics.detect_retrieval_utils.utils as utils
+from torch.nn.modules.distance import CosineSimilarity
+from torch.nn.utils.rnn import pad_packed_sequence as unpack
+from torch.nn.utils.rnn import pack_padded_sequence as pack
+from metrics.detect_retrieval_utils.evaluate_sts import evaluate_sts
+from torch import optim
 
 from torch import Tensor
 from tokenizers import Tokenizer
@@ -239,53 +248,37 @@ class BlacklistLogitsProcessor(LogitsProcessor):
 def score_sequence(inputs: Tensor = None, 
                    outputs: Tensor = None, 
                    tokenizer: Tokenizer = None,
-                #    logits_processor: LogitsProcessor = None,
                    initial_seed: int = None,
                    dynamic_seed: str = None,
                    bl_proportion: float = None,
                    use_cuda: bool = True,
                    record_hits: bool = False,
                    debug: bool = True,
-                #    trim_tokens: int = 2,
-                ):
+                   ):
 
     assert  (inputs is not None) and \
             (outputs is not None) and \
             (tokenizer is not None),"output tensor, tokenizer, and bl params req'd"
-            # (logits_processor is not None), 
 
     vocabulary = list(tokenizer.get_vocab().values())
     vocab_size = len(vocabulary)
 
     model_generations = outputs.tolist()[0] # these are tensors unpack once for speed
-    # toks_generated = model_generations[num_orig_input_tokens:]
     toks_generated = model_generations
     num_toks_generated = len(toks_generated)
-
-    # num_toks_to_trim = trim_tokens*2
-    # if (num_toks_generated-num_toks_to_trim > 0) == False: 
-    #     return -1, -1
-        
-    # assert num_toks_generated > num_toks_to_trim, f"Need more than {num_toks_to_trim} toks total since we trim start and end a bit."
-
-    # toks_generated = toks_generated[trim_tokens:-trim_tokens]
 
     if initial_seed is not None:
         random.seed(initial_seed)
     
-    device = torch_directml.device()
+    device = "cuda" if torch.cuda.is_available() and use_cuda else "cpu"
     g_cuda = torch.Generator(device=device)
     large_prime = 15485863
 
     bl_hits, hit_list = 0, []
 
     prev_token = inputs[0][-1].item()
-    # prev_token = toks_generated[0] # haven't decided whether this edge effect matters
 
-    # for idx,tok_gend in enumerate(toks_generated[1:]):
     for idx,tok_gend in enumerate(toks_generated):
-
-        # prev_token = model_generations[num_orig_input_tokens+idx-1]
         
         if dynamic_seed == "initial":
             g_cuda.manual_seed(large_prime*initial_seed)
@@ -317,7 +310,6 @@ def score_sequence(inputs: Tensor = None,
 
     if record_hits:
         return bl_hits, num_toks_generated, hit_list
-    # bl_fraction = bl_hits/num_toks_generated
     return bl_hits, num_toks_generated
 
 
