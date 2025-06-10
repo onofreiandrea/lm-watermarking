@@ -19,7 +19,7 @@ import collections
 from math import sqrt
 from itertools import chain, tee
 from functools import lru_cache
-
+import torch.nn.functional as F
 import scipy.stats
 import torch
 from tokenizers import Tokenizer
@@ -37,10 +37,21 @@ class WatermarkBase:
         delta: float = 2.0,
         seeding_scheme: str = "selfhash",  # simple default, find more schemes in alternative_prf_schemes.py
         select_green_tokens: bool = True,  # should always be the default if not running in legacy mode
+        use_temp=True,
+        temp_h=10,
+        temp_t0=1.0,
+        temp_m=0.7,
+        temp_M=1.3,
     ):
         # patch now that None could now maybe be passed as seeding_scheme
         if seeding_scheme is None:
             seeding_scheme = "selfhash"
+
+        self.use_temp = use_temp
+        self.temp_h = temp_h
+        self.temp_t0 = temp_t0
+        self.temp_m = temp_m
+        self.temp_M = temp_M
 
         # Vocabulary setup
         self.vocab = vocab
@@ -167,6 +178,28 @@ class WatermarkLogitsProcessor(WatermarkBase, LogitsProcessor):
                 pass  # do not break early
         return torch.as_tensor(final_greenlist, device=input_ids.device)
 
+    def _seed_temp_rng(self, input_ids: torch.LongTensor) -> None:
+        """
+        Seed the temperature RNG from the last self.temp_h tokens of input_ids.
+        """
+        n_tokens = input_ids.shape[-1]
+        use_h = min(self.temp_h, n_tokens)
+
+        tokens_for_seed = input_ids[-use_h :]
+
+        # Hash last self.temp_h tokens
+        prf_key = prf_lookup[self.prf_type](tokens_for_seed, salt_key=self.hash_key)
+
+        self.temp_rng = torch.Generator(device=input_ids.device)
+        self.temp_rng.manual_seed(prf_key % (2**64 - 1))
+            
+    def _generate_temperature(self, input_ids: torch.LongTensor) -> float:
+        self._seed_temp_rng(input_ids)
+        U_t = torch.rand(1, generator=self.temp_rng).item()
+        T_t = self.temp_t0 * (self.temp_m + (self.temp_M - self.temp_m) * U_t)
+        return T_t
+
+
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
         """Call with previous context as input_ids, and scores for next token."""
 
@@ -179,6 +212,11 @@ class WatermarkLogitsProcessor(WatermarkBase, LogitsProcessor):
 
         list_of_greenlist_ids = [None for _ in input_ids]  # Greenlists could differ in length
         for b_idx, input_seq in enumerate(input_ids):
+            
+            if self.use_temp:
+                T_t = self._generate_temperature(input_seq)
+                scores[b_idx] = scores[b_idx] / T_t 
+            
             if self.self_salt:
                 greenlist_ids = self._score_rejection_sampling(input_seq, scores[b_idx])
             else:
@@ -217,11 +255,13 @@ class WatermarkDetector(WatermarkBase):
         device: torch.device = None,
         tokenizer: Tokenizer = None,
         z_threshold: float = 4.0,
+        model,
         normalizers: list[str] = ["unicode"],  # or also: ["unicode", "homoglyphs", "truecase"]
         ignore_repeated_ngrams: bool = True,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
+        self.model = model
         # also configure the metrics returned/preprocessing options
         assert device, "Must pass device"
         assert tokenizer, "Need an instance of the generating tokenizer to perform detection"
@@ -528,6 +568,45 @@ class WatermarkDetector(WatermarkBase):
 
         return score_dict
 
+    @torch.no_grad()
+    def compute_watermark_score(self, model, tokenized_text):
+        input_ids = tokenized_text.unsqueeze(0)  # (1, seq_len)
+        target_ids = input_ids[:, 1:]            # (1, seq_len - 1)
+        input_ids = input_ids[:, :-1]            # (1, seq_len - 1)
+
+        # Run model
+        outputs = model(input_ids)
+        logits = outputs.logits  # shape: (1, seq_len - 1, vocab_size)
+
+        # Clone to avoid modifying original logits
+        logits = logits.clone()
+
+        # Apply per-token temperature scaling (must match generation exactly)
+        for t in range(logits.size(1)):
+            prefix = input_ids[0, :t+1]  # Get prefix up to current token
+
+            # === Equivalent to _generate_temperature(prefix) ===
+            n_tokens = prefix.shape[0]
+            use_h = min(self.temp_h, n_tokens)
+            tokens_for_seed = prefix[-use_h:]
+
+            prf_key = prf_lookup[self.prf_type](tokens_for_seed, salt_key=self.hash_key)
+            temp_rng = torch.Generator(device=input_ids.device)
+            temp_rng.manual_seed(prf_key % (2**64 - 1))
+
+            U_t = torch.rand(1, generator=temp_rng).item()
+            T_t = self.temp_t0 * (self.temp_m + (self.temp_M - self.temp_m) * U_t)
+            # ===============================================
+
+            logits[0, t, :] = logits[0, t, :] / T_t
+
+        # Compute softmax and target token probabilities
+        probs = F.softmax(logits, dim=-1)
+        token_probs = probs.gather(2, target_ids.unsqueeze(-1)).squeeze(-1)
+
+        avg_prob = token_probs.mean().item()
+        return avg_prob
+
     def detect(
         self,
         text: str = None,
@@ -595,6 +674,15 @@ class WatermarkDetector(WatermarkBase):
             for key, value in output_dict.items():
                 if isinstance(value, int):
                     output_dict[key] = float(value)
+        
+        # Optional: Compute sequence probability score
+        if self.tokenizer is not None and hasattr(self, "model"):
+            try:
+                avg_prob = self.compute_watermark_score(self.model, tokenized_text)
+                output_dict["sequence_prob_score"] = avg_prob
+            except Exception as e:
+                output_dict["sequence_prob_score"] = None
+                print(f"Failed to compute sequence probability: {e}")
 
         return output_dict
 
