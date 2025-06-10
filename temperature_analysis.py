@@ -24,7 +24,7 @@ with open('watermark_paraphrase_results_with_temp_1_0.3.json') as f:
 
     plt.subplot(2, 1, 1)  # 2 rows, 1 column, 1st plot
     plt.hist(df['sequence_prob_score'], bins=bins, color='blue', alpha=0.7)
-    plt.title('Histogram of sequence_prob_score')
+    plt.title('Histogram of sequence_prob_score: 1 0.3')
     plt.xlabel('sequence_prob_score')
     plt.ylabel('Frequency')
     plt.xlim(x_min, x_max)

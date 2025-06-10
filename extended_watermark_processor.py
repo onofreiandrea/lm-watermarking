@@ -190,7 +190,7 @@ class WatermarkLogitsProcessor(WatermarkBase, LogitsProcessor):
         # Hash last self.temp_h tokens
         prf_key = prf_lookup[self.prf_type](tokens_for_seed, salt_key=self.hash_key)
 
-        self.temp_rng = torch.Generator(device=input_ids.device)
+        self.temp_rng = torch.Generator(device="cpu")
         self.temp_rng.manual_seed(prf_key % (2**64 - 1))
             
     def _generate_temperature(self, input_ids: torch.LongTensor) -> float:
@@ -204,7 +204,7 @@ class WatermarkLogitsProcessor(WatermarkBase, LogitsProcessor):
         """Call with previous context as input_ids, and scores for next token."""
 
         # this is lazy to allow us to co-locate on the watermarked model's device
-        self.rng = torch.Generator(device=input_ids.device) if self.rng is None else self.rng
+        self.rng = torch.Generator(device="cuda") if self.rng is None else self.rng
 
         # NOTE, it would be nice to get rid of this batch loop, but currently,
         # the seed and partition operations are not tensor/vectorized, thus
@@ -353,7 +353,7 @@ class WatermarkDetector(WatermarkBase):
             )
 
         # Compute scores for all ngrams contexts in the passage:
-        token_ngram_generator = ngrams(input_ids.cpu().tolist(), self.context_width + 1 - self.self_salt)
+        token_ngram_generator = ngrams(input_ids.cuda().tolist(), self.context_width + 1 - self.self_salt)
         frequencies_table = collections.Counter(token_ngram_generator)
         ngram_to_watermark_lookup = {}
         for idx, ngram_example in enumerate(frequencies_table.keys()):
@@ -371,7 +371,7 @@ class WatermarkDetector(WatermarkBase):
         green_token_mask, green_token_mask_unique, offsets = [], [], []
         used_ngrams = {}
         unique_ngram_idx = 0
-        ngram_examples = ngrams(input_ids.cpu().tolist(), self.context_width + 1 - self.self_salt)
+        ngram_examples = ngrams(input_ids.cuda().tolist(), self.context_width + 1 - self.self_salt)
 
         for idx, ngram_example in enumerate(ngram_examples):
             green_token_mask.append(ngram_to_watermark_lookup[ngram_example])
@@ -594,7 +594,7 @@ class WatermarkDetector(WatermarkBase):
                 tokens_for_seed = prefix[-use_h:]
 
                 prf_key = prf_lookup[self.prf_type](tokens_for_seed, salt_key=self.hash_key)
-                temp_rng = torch.Generator(device=input_ids.device)
+                temp_rng = torch.Generator(device=torch.device("cpu"))
                 temp_rng.manual_seed(prf_key % (2**64 - 1))
 
                 U_t = torch.rand(1, generator=temp_rng).item()

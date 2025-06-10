@@ -64,7 +64,7 @@ paraphrase_model = paraphrase_model.to(device)
 watermark_processor = WatermarkLogitsProcessor(vocab=list(tokenizer.get_vocab().values()),
                                                gamma=0.25,
                                                delta=2.0,
-                                               use_temp=False,
+                                               use_temp=True,
                                                temp_h=10,
                                                temp_t0=1.0,
                                                temp_m=0.7,
@@ -79,7 +79,7 @@ watermark_detector = WatermarkDetector(vocab=list(tokenizer.get_vocab().values()
                                         delta=2.0,
                                         tokenizer=tokenizer,
                                         z_threshold=4.0,
-                                        use_temp=False,
+                                        use_temp=True,
                                         normalizers=[],
                                         ignore_repeated_ngrams=True)
 
@@ -154,7 +154,7 @@ for i in range(num_samples):
 
         score_dict = watermark_detector.detect(output_text)
 
-        paraphrased = iterative_paraphrase(output_text, mask_fraction=0.3)
+        paraphrased = iterative_paraphrase(output_text, mask_fraction=0.5)
 
         paraphrased_score_dict = watermark_detector.detect(paraphrased)
         
@@ -187,4 +187,4 @@ df = pd.DataFrame([
     for r in results
 ])
 
-df.to_json("watermark_paraphrase_results_with_temp_1_0.3.json", orient="records", indent=2)
+df.to_json("watermark_paraphrase_results_with_temp_t_0.5.json", orient="records", indent=2)
