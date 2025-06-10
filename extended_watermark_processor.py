@@ -216,6 +216,8 @@ class WatermarkLogitsProcessor(WatermarkBase, LogitsProcessor):
             if self.use_temp:
                 T_t = self._generate_temperature(input_seq)
                 scores[b_idx] = scores[b_idx] / T_t 
+            else:
+                scores[b_idx] = scores[b_idx] / 1
             
             if self.self_salt:
                 greenlist_ids = self._score_rejection_sampling(input_seq, scores[b_idx])
@@ -585,20 +587,23 @@ class WatermarkDetector(WatermarkBase):
         for t in range(logits.size(1)):
             prefix = input_ids[0, :t+1]  # Get prefix up to current token
 
-            # === Equivalent to _generate_temperature(prefix) ===
-            n_tokens = prefix.shape[0]
-            use_h = min(self.temp_h, n_tokens)
-            tokens_for_seed = prefix[-use_h:]
+            if(self.use_temp):
+                # === Equivalent to _generate_temperature(prefix) ===
+                n_tokens = prefix.shape[0]
+                use_h = min(self.temp_h, n_tokens)
+                tokens_for_seed = prefix[-use_h:]
 
-            prf_key = prf_lookup[self.prf_type](tokens_for_seed, salt_key=self.hash_key)
-            temp_rng = torch.Generator(device=input_ids.device)
-            temp_rng.manual_seed(prf_key % (2**64 - 1))
+                prf_key = prf_lookup[self.prf_type](tokens_for_seed, salt_key=self.hash_key)
+                temp_rng = torch.Generator(device=input_ids.device)
+                temp_rng.manual_seed(prf_key % (2**64 - 1))
 
-            U_t = torch.rand(1, generator=temp_rng).item()
-            T_t = self.temp_t0 * (self.temp_m + (self.temp_M - self.temp_m) * U_t)
-            # ===============================================
+                U_t = torch.rand(1, generator=temp_rng).item()
+                T_t = self.temp_t0 * (self.temp_m + (self.temp_M - self.temp_m) * U_t)
+                # ===============================================
 
-            logits[0, t, :] = logits[0, t, :] / T_t
+                logits[0, t, :] = logits[0, t, :] / T_t + self.delta
+            else:
+                logits[0, t, :] = logits[0, t, :] / 1 + self.delta
 
         # Compute softmax and target token probabilities
         probs = F.softmax(logits, dim=-1)

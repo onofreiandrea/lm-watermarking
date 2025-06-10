@@ -16,7 +16,6 @@ import json
 import torch
 from torch import Tensor
 from tokenizers import Tokenizer
-import torch_directml
 from datasets import load_dataset, Dataset
 from extended_watermark_processor import WatermarkLogitsProcessor, WatermarkDetector
 from transformers import (AutoTokenizer, 
@@ -53,7 +52,7 @@ tokenizer = AutoTokenizer.from_pretrained(hf_model_name)
 
 # defaults to device 0
 # will need to use 'parallelize' for multi-gpu sharding
-device = torch.device("cpu")
+device = torch.device("cuda")
 model = model.to(device)
 model.eval()
 
@@ -65,7 +64,7 @@ paraphrase_model = paraphrase_model.to(device)
 watermark_processor = WatermarkLogitsProcessor(vocab=list(tokenizer.get_vocab().values()),
                                                gamma=0.25,
                                                delta=2.0,
-                                               use_temp=True,
+                                               use_temp=False,
                                                temp_h=10,
                                                temp_t0=1.0,
                                                temp_m=0.7,
@@ -77,9 +76,10 @@ watermark_detector = WatermarkDetector(vocab=list(tokenizer.get_vocab().values()
                                         seeding_scheme="selfhash", # should match original setting
                                         device=model.device, # must match the original rng device type
                                         model=model,
+                                        delta=2.0,
                                         tokenizer=tokenizer,
                                         z_threshold=4.0,
-                                        use_temp=True,
+                                        use_temp=False,
                                         normalizers=[],
                                         ignore_repeated_ngrams=True)
 
@@ -187,4 +187,4 @@ df = pd.DataFrame([
     for r in results
 ])
 
-df.to_json("watermark_paraphrase_results_with_temp_0.3.json", orient="records", indent=2)
+df.to_json("watermark_paraphrase_results_with_temp_1_0.3.json", orient="records", indent=2)

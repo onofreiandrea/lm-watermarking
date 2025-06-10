@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import json
 
-with open('watermark_paraphrase_results_with_temp_0.3.json') as f:
+with open('watermark_paraphrase_results_with_temp_1_0.3.json') as f:
     data = json.load(f)
     
     df = pd.DataFrame(data)
