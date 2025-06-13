@@ -1,72 +1,75 @@
 import json
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 
-# List of your files and their parameters
+# Define your files and labels
 files = [
     ('watermark_paraphrase_results_with_temp_1_0.3.json', '1 0.3'),
-    ('watermark_paraphrase_results_with_temp_t_0.3.json', 't 0.3'),  # replace with your actual files
-    ('watermark_paraphrase_results_with_temp_1_0.5.json', '1 0.5'),  # replace with your actual files
-    ('watermark_paraphrase_results_with_temp_t_0.5.json', 't 0.5')   # replace with your actual files
+    ('watermark_paraphrase_results_with_temp_t_0.3.json', 't 0.3'),
+    ('watermark_paraphrase_results_with_temp_1_0.5.json', '1 0.5'),
+    ('watermark_paraphrase_results_with_temp_t_0.5.json', 't 0.5')
 ]
 
-# First pass to determine global min/max for consistent axes
-all_original_scores = []
-all_paraphrased_scores = []
+# First pass: compute global y-axis limits
+all_differences = []
 
-for file, _ in files:
-    with open(file) as f:
+for filename, _ in files:
+    with open(filename, 'r') as f:
         data = json.load(f)
-        df = pd.DataFrame(data)
-        all_original_scores.extend(df['sequence_prob_score'].tolist())
-        all_paraphrased_scores.extend(df['paraphrased_sequence_prob_score'].tolist())
+    
+    diffs = [
+        entry['sequence_prob_score'] - entry['paraphrased_sequence_prob_score']
+        for entry in data
+        if abs(entry['sequence_prob_score'] - entry['paraphrased_sequence_prob_score']) <= 0.5
+    ]
+    all_differences.extend(diffs)
 
-# Get global min and max for x-axis
-x_min = min(min(all_original_scores), min(all_paraphrased_scores))
-x_max = max(max(all_original_scores), max(all_paraphrased_scores))
-bins = np.linspace(x_min, x_max, 16)  # 15 bins
+global_min = min(all_differences)
+global_max = max(all_differences)
 
-# Get global max for y-axis by computing all histograms
-max_counts = 0
-for file, _ in files:
-    with open(file) as f:
+# Set up 2x2 subplots
+fig, axs = plt.subplots(2, 2, figsize=(14, 9))
+axs = axs.flatten()
+
+# Second pass: plot
+for i, (filename, label) in enumerate(files):
+    with open(filename, 'r') as f:
         data = json.load(f)
-        df = pd.DataFrame(data)
-        hist1, _ = np.histogram(df['sequence_prob_score'], bins=bins)
-        hist2, _ = np.histogram(df['paraphrased_sequence_prob_score'], bins=bins)
-        current_max = max(hist1.max(), hist2.max())
-        if current_max > max_counts:
-            max_counts = current_max
-y_max = max_counts + 1  # add some padding
+    
+    # Compute and clean differences
+    differences = [
+        entry['sequence_prob_score'] - entry['paraphrased_sequence_prob_score']
+        for entry in data
+        if abs(entry['sequence_prob_score'] - entry['paraphrased_sequence_prob_score']) <= 0.5
+    ]
+    
+    differences.sort()
+    
+    avg = sum(differences) / len(differences)
+    below_avg = [d for d in differences if d < avg]
+    above_avg = [d for d in differences if d > avg]
+    
+    avg_below = sum(below_avg) / len(below_avg) if below_avg else 0
+    avg_above = sum(above_avg) / len(above_avg) if above_avg else 0
 
-# Create the figure with 4 rows and 2 columns
-plt.figure(figsize=(12, 16))  # adjust size as needed
+    # Print stats
+    print(f"\n{label}:")
+    print(f"  Total points: {len(differences)}")
+    print(f"  Overall average: {avg:.4f}")
+    print(f"  Average below avg: {avg_below:.4f} ({len(below_avg)} points)")
+    print(f"  Average above avg: {avg_above:.4f} ({len(above_avg)} points)")
 
-for i, (file, params) in enumerate(files):
-    with open(file) as f:
-        data = json.load(f)
-        df = pd.DataFrame(data)
-        
-        # Original scores plot
-        plt.subplot(4, 2, 2*i+1)
-        plt.hist(df['sequence_prob_score'], bins=bins, color='blue', alpha=0.7)
-        plt.title(f'Original Scores (params: {params})')
-        plt.ylabel('Frequency')
-        plt.xlim(x_min, x_max)
-        plt.ylim(0, y_max)
-        if i == len(files) - 1:  # only add xlabel to bottom plots
-            plt.xlabel('sequence_prob_score')
-        
-        # Paraphrased scores plot
-        plt.subplot(4, 2, 2*i+2)
-        plt.hist(df['paraphrased_sequence_prob_score'], bins=bins, color='green', alpha=0.7)
-        plt.title(f'Paraphrased Scores (params: {params})')
-        plt.ylabel('Frequency')
-        plt.xlim(x_min, x_max)
-        plt.ylim(0, y_max)
-        if i == len(files) - 1:  # only add xlabel to bottom plots
-            plt.xlabel('paraphrased_sequence_prob_score')
+    # Plot
+    axs[i].plot(differences, marker='o', linestyle='-', markersize=3, label='Sorted Difference')
+    axs[i].axhline(avg, color='red', linestyle='--', label=f'Avg = {avg:.4f}')
+    axs[i].axhline(avg_below, color='blue', linestyle=':', label=f'Avg < avg = {avg_below:.4f}')
+    axs[i].axhline(avg_above, color='green', linestyle=':', label=f'Avg > avg = {avg_above:.4f}')
+    
+    axs[i].set_ylim(global_min, global_max)
+    axs[i].set_title(f"Sorted Score Differences ({label})")
+    axs[i].set_xlabel("Sorted Index")
+    axs[i].set_ylabel("Score Difference")
+    axs[i].legend()
+    axs[i].grid(True)
 
 plt.tight_layout()
 plt.show()
