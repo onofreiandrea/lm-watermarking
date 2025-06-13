@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 files = [
     ('watermark_paraphrase_results_with_temp_1_0.3.json', '1 0.3'),
     ('watermark_paraphrase_results_with_temp_t_0.3.json', 't 0.3'),
-    ('watermark_paraphrase_results_with_temp_1_0.5.json', '1 0.5'),
-    ('watermark_paraphrase_results_with_temp_t_0.5.json', 't 0.5')
+    ('watermark_paraphrase_results_with_temp_1_0.4.json', '1 0.4'),
+    ('watermark_paraphrase_results_with_temp_t_0.4.json', 't 0.4')
 ]
 
 # First pass: compute global y-axis limits
