@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 
 # Define your files and labels
 files = [
-    ('watermark_paraphrase_results_with_temp_1_0.3.json', '1 0.3'),
-    ('watermark_paraphrase_results_with_temp_t_0.3.json', 't 0.3'),
-    ('watermark_paraphrase_results_with_temp_1_0.4.json', '1 0.4'),
-    ('watermark_paraphrase_results_with_temp_t_0.4.json', 't 0.4')
+    ('watermark_paraphrase_results_with_temp_1_0.3.json', 'T=1 paraphrased=0.3'),
+    ('watermark_paraphrase_results_with_temp_t_0.3.json', 'T=t paraphrased=0.3'),
+    ('watermark_paraphrase_results_with_temp_1_0.4.json', 'T=1 paraphrased=0.4'),
+    ('watermark_paraphrase_results_with_temp_t_0.4.json', 'T=t paraphrased=0.4')
 ]
 
 # First pass: compute global y-axis limits
@@ -19,7 +19,7 @@ for filename, _ in files:
     diffs = [
         entry['sequence_prob_score'] - entry['paraphrased_sequence_prob_score']
         for entry in data
-        if abs(entry['sequence_prob_score'] - entry['paraphrased_sequence_prob_score']) <= 0.5
+        if abs(entry['sequence_prob_score'] - entry['paraphrased_sequence_prob_score']) <= 0.4
     ]
     all_differences.extend(diffs)
 
@@ -39,7 +39,7 @@ for i, (filename, label) in enumerate(files):
     differences = [
         entry['sequence_prob_score'] - entry['paraphrased_sequence_prob_score']
         for entry in data
-        if abs(entry['sequence_prob_score'] - entry['paraphrased_sequence_prob_score']) <= 0.5
+        if abs(entry['sequence_prob_score'] - entry['paraphrased_sequence_prob_score']) <= 0.4
     ]
     
     differences.sort()
@@ -61,8 +61,8 @@ for i, (filename, label) in enumerate(files):
     # Plot
     axs[i].plot(differences, marker='o', linestyle='-', markersize=3, label='Sorted Difference')
     axs[i].axhline(avg, color='red', linestyle='--', label=f'Avg = {avg:.4f}')
-    axs[i].axhline(avg_below, color='blue', linestyle=':', label=f'Avg < avg = {avg_below:.4f}')
-    axs[i].axhline(avg_above, color='green', linestyle=':', label=f'Avg > avg = {avg_above:.4f}')
+    axs[i].axhline(avg_below, color='blue', linestyle=':', label=f'avg < Avg = {avg_below:.4f}')
+    axs[i].axhline(avg_above, color='green', linestyle=':', label=f'avg > Avg = {avg_above:.4f}')
     
     axs[i].set_ylim(global_min, global_max)
     axs[i].set_title(f"Sorted Score Differences ({label})")
@@ -72,4 +72,5 @@ for i, (filename, label) in enumerate(files):
     axs[i].grid(True)
 
 plt.tight_layout()
+plt.savefig("figure-3-4")
 plt.show()
