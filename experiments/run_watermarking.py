@@ -18,9 +18,6 @@ from tokenizers import Tokenizer
 
 import wandb
 import matplotlib.pyplot as plt
-
-import torch_directml
-
 # cache path before HF imports just for kicks
 # bc I don't really know when this is pulled by the library
 # TODO change to passing as an arg to the model load fn
@@ -102,7 +99,7 @@ def main(args):
 
     # defaults to device 0
     # will need to use 'parallelize' for multi-gpu sharding
-    device = torch_directml.device()
+    device = torch.device("cuda")
     model = model.to(device)
     model.eval()
 
